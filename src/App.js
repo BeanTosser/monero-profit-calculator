@@ -7,27 +7,41 @@ class App extends React.Component {
     this.state = {
       transactions: []
     }
-
     // Bind handlers
-    // this.addTransactionHandler.bind(this);
+    this.addTransaction = this.addTransaction.bind(this);
   }
 
-  /*
-  addTransactionHandler(transaction) {
-    transactions = this.state.transactions.slice();
-    transactions.push(transaction);
+  addTransaction(){
+    let transactions = this.state.transactions.slice();
+    transactions.push(<TransactionContainer />);
+    this.setState({transactions: transactions});
   }
-  */
 
   render() {
     return (
       <div className="App">
         <div className="Header"><h1>Monero Profit Calculator</h1></div>
         <div className="TotalProfit"></div>
-        <div className="Transaction"></div>
-        <div className="Transaction"></div>
+        {this.state.transactions}
+        <AddTransactionButton onClick={this.addTransaction} />
       </div>
     );
+  }
+}
+
+function TransactionContainer(props) {
+  return(
+    <div className="Transaction"></div>
+  );
+}
+
+class AddTransactionButton extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    return <button id="AddTransaction" onClick={this.props.onClick}>+</button>;
   }
 }
 
