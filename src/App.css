@@ -45,5 +45,32 @@ button#AddTransaction {
   height: 96px;
   width: 97%;
   font-size: 70px;
+  margin-top: 15px;
+}
+
+.EntryArea {
+  height: 100%;
+  float: left;
+}
+
+.Prompt {
   margin-top: 10px;
+  text-align: left;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+table {
+  text-align: center;
+  border: 1px solid black;
+  float: right;
+}
+
+td {
+  border: 1px solid black;
+}
+
+.TableLabels {
+  background-color: "#CCCCCC";
+  font-weight: bold;
 }
