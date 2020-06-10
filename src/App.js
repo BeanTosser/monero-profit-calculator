@@ -7,7 +7,10 @@ class App extends React.Component {
     this.state = {
       transactions: [],
       investmentData: [],
-      profitData: []
+      profitData: [],
+      purchasePrices: [],
+      currentPrice: 55.23, //Fake dummy price,
+      netChange: 0.0
     }
     // Bind handlers
     this.addTransaction = this.addTransaction.bind(this);
@@ -15,18 +18,44 @@ class App extends React.Component {
     this.handleDateChange = this.handleDateChange.bind(this);
   }
 
+  calculateNetChange() {
+    let netChange = 0;
+    for(let i=0; i < this.state.profitData.length; i++){
+      netChange += Number(this.state.profitData[i].valueChange);
+    }
+    //netChange = netChange.tofixed(2);
+    alert("Setting netChange to " + netChange);
+    this.setState({netChange: netChange});
+  }
+
+  getFakePurchasePrice() {
+    return 50 + (Math.random() - 0.5) * 20
+  }
+
   addTransaction(){
     let transactions = this.state.transactions.slice();
     let investmentData = this.state.investmentData.slice();
     let profitData = this.state.profitData.slice();
+    let purchasePrices = this.state.purchasePrices.slice();
+
+    // Change to 0.00 for final build
+    const volume = 1.236
     investmentData.push({
-      volume: 0,
-      date: new Date
+      volume: volume, // Dummy value
+      date: this.convertDateToInputString(new Date())
     });
+
+    // Temporary for testing
+    purchasePrices.push(this.getFakePurchasePrice());
+
+    let valueAtPurchase = (investmentData[investmentData.length-1].volume * purchasePrices[purchasePrices.length-1]).toFixed(2);
+    let valueAtPresent = (investmentData[investmentData.length-1].volume * this.state.currentPrice).toFixed(2);
+    let valueChange = (valueAtPresent - valueAtPurchase).toFixed(2);
+
     profitData.push({
-      valueAtPurchase: 0,
-      valueAtPresent: 0,
-      valueChange: 0
+      valueAtPurchase: valueAtPurchase,
+      valueAtPresent: valueAtPresent,
+      valueChange: valueChange
     });
 
     transactions.push(<TransactionContainer
@@ -40,8 +69,13 @@ class App extends React.Component {
     this.setState({
       transactions: transactions,
       investmentData: investmentData,
-      profitData: profitData
-    });
+      profitData: profitData,
+      purchasePrices: purchasePrices,
+    }, this.calculateNetChange);
+  }
+
+  convertDateToInputString(date) {
+    return date.getFullYear() + "-" + date.getMonth() + "-" + date.getDate();
   }
 
   handleVolumeChange(transactionId, volume) {
@@ -79,7 +113,7 @@ class App extends React.Component {
     return (
       <div className="App">
         <div className="Header"><h1>Monero Profit Calculator</h1></div>
-        <div className="TotalProfit"></div>
+        <div className="TotalProfit">${this.state.netChange}</div>
         {this.state.transactions}
         <AddTransactionButton onClick={this.addTransaction} />
       </div>
@@ -93,6 +127,7 @@ class TransactionContainer extends React.Component {
     this.state = {};
     this.onVolumeChange = this.onVolumeChange.bind(this);
     this.onDateChange = this.onDateChange.bind(this);
+    alert("props.investmentData.date: " + this.props.investmentData.date);
   }
 
   onVolumeChange(event) {
@@ -101,6 +136,8 @@ class TransactionContainer extends React.Component {
   }
 
   onDateChange(event) {
+    alert(event.target.value);
+    this.setState({dateInput: event.target.value});
     this.props.handleDateChange(this.props.id, this._dateInput)
   }
 
@@ -113,19 +150,18 @@ class TransactionContainer extends React.Component {
             type="number"
             name="Volume"
             size="12"
-            value="this.state.volumeInput"
-            onKeyUp={this.onVolumeChange}
-            onMouseUp={this.onDateChange}
+            value={this.props.investmentData.volume}
+            onChange={this.onVolumeChange}
           />
           <Prompt
             ref={(c) => this._dateInput = c}
             type="date"
             name="Date"
-            onKeyUp={this.onDateChange}
-            onMouseUp={this.onDateChange}
+            value={this.props.investmentData.date}
+            onChange={this.onDateChange}
           />
         </div>
-        <ProfitDataTable data={this.props.profitData} />
+        <ProfitDataTable profitData={this.props.profitData} />
       </div>
     );
   };
@@ -144,7 +180,7 @@ class AddTransactionButton extends React.Component {
 function Prompt(props) {
   return(
   <div className="Prompt">
-    {props.name}: <input type={props.type} name={props.name} size={props.size} onKeyUp={props.onKeyUp} onMouseUp={props.onMouseUp} />
+    {props.name}: <input value = {props.value} type={props.type} name={props.name} size={props.size} onChange={props.onChange} />
   </div>
   );
 }
@@ -161,10 +197,10 @@ class ProfitDataTable extends React.Component {
           <td>Purchase Value</td><td>Present Value</td>
         </tr>
         <tr>
-          <td>100.00</td><td>100.00</td>
+          <td>{this.props.profitData.valueAtPurchase}</td><td>{this.props.profitData.valueAtPresent}</td>
         </tr>
         <tr>
-          <td>Profit/Loss: </td><td>100.00</td>
+          <td>Profit/Loss: </td><td>{this.props.profitData.valueChange}</td>
         </tr>
       </table>
     );
