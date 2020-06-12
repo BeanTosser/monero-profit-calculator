@@ -24,7 +24,6 @@ class App extends React.Component {
       netChange += Number(this.state.profitData[i].valueChange);
     }
     //netChange = netChange.tofixed(2);
-    alert("Setting netChange to " + netChange);
     this.setState({netChange: netChange});
   }
 
@@ -57,51 +56,68 @@ class App extends React.Component {
       valueAtPresent: valueAtPresent,
       valueChange: valueChange
     });
-
     transactions.push(<TransactionContainer
       id={transactions.length}
       investmentData = {investmentData[investmentData.length-1]}
       profitData = {profitData[profitData.length-1]}
+      currentPrice = {this.state.currentPrice}
       handleVolumeChange={this.handleVolumeChange}
       handleDateChange={this.handleDateChange}
     />);
-
-    this.setState({
-      transactions: transactions,
-      investmentData: investmentData,
-      profitData: profitData,
-      purchasePrices: purchasePrices,
-    }, this.calculateNetChange);
+    this.setState(
+      {
+        transactions: transactions,
+        investmentData: investmentData,
+        profitData: profitData,
+        purchasePrices: purchasePrices,
+      }, () => {
+        this.calculateNetChange();
+      }
+    );
   }
 
   convertDateToInputString(date) {
-    return date.getFullYear() + "-" + date.getMonth() + "-" + date.getDate();
+    let month = date.getMonth() + 1;
+    month < 10 ? month = "0" + month : month = "" + month;
+    return date.getFullYear() + "-" + month + "-" + date.getDate();
   }
 
   handleVolumeChange(transactionId, volume) {
-    alert("Txid: " + transactionId + " , Volume: " + volume);
     let investmentData = this.state.investmentData.slice();
     let profitData = this.state.profitData.slice();
+    let transactions = this.state.transactions.slice();
 
     investmentData[transactionId] = {
       volume: volume,
       date: investmentData[transactionId].date
     };
 
-    //TEMPORARY - right now this function just needs to run.
-    // Later it will need to calculate actual present and historical
-    // monero values based oncoingecko API queries
+
+    let valueAtPurchase = volume * this.state.purchasePrices[transactionId];
+    let valueAtPresent = volume * this.state.currentPrice;
     profitData[transactionId] = {
-      valueAtPurchase: volume,
-      valueAtPresent: volume,
-      valueChange: volume
-    };
-    this.setState((state, props) => ({
-      transactions: state.transactions,
+      valueAtPurchase: valueAtPurchase.toFixed(2),
+      valueAtPresent: valueAtPresent.toFixed(2),
+      valueChange: (valueAtPresent - valueAtPurchase).toFixed(2)
+    }
+
+    transactions[transactionId] = (
+      <TransactionContainer
+        id={transactionId}
+        investmentData = {investmentData[transactionId]}
+        profitData = {profitData[transactionId]}
+        currentPrice = {this.state.currentPrice}
+        handleVolumeChange={this.handleVolumeChange}
+        handleDateChange={this.handleDateChange}
+      />
+    );
+
+    this.setState({
       investmentData: investmentData,
-      profitData: profitData
-    }));
-    alert("changeHandler running!");
+      profitData: profitData,
+      transactions: transactions
+    }, () => {
+    });
   }
 
   handleDateChange(transactionId, date) {
@@ -124,19 +140,20 @@ class App extends React.Component {
 class TransactionContainer extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {
+      investmentData: props.investmentData,
+      profitData: props.profitData,
+      currentPrice: props.currentPrice
+    };
     this.onVolumeChange = this.onVolumeChange.bind(this);
     this.onDateChange = this.onDateChange.bind(this);
-    alert("props.investmentData.date: " + this.props.investmentData.date);
   }
 
   onVolumeChange(event) {
-    this.setState({volumeInput: event.target.value});
     this.props.handleVolumeChange(this.props.id, event.target.value);
   }
 
   onDateChange(event) {
-    alert(event.target.value);
     this.setState({dateInput: event.target.value});
     this.props.handleDateChange(this.props.id, this._dateInput)
   }
