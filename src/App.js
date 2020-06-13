@@ -1,6 +1,12 @@
 import React from 'react';
 import './App.css';
 
+// Global constants
+const CURRENT_PRICE_API_URL = "https://api.coingecko.com/api/v3/simple/price?ids=monero&vs_currencies=usd"
+// This request URL is split in two because the appropriate date value must be inserted between them to
+// form the complete date string
+const PRICE_AT_DATE_URL_PARTS = ["https://api.coingecko.com/api/v3/coins/monero/history?date=","&localization=false"]
+
 class App extends React.Component {
   constructor(props) {
     super(props);
@@ -16,6 +22,90 @@ class App extends React.Component {
     this.addTransaction = this.addTransaction.bind(this);
     this.handleVolumeChange = this.handleVolumeChange.bind(this);
     this.handleDateChange = this.handleDateChange.bind(this);
+  }
+
+  componentDidMount(){
+    this.getCurrentMoneroPrice();
+  }
+
+  handleDateChange(transactionId, date){
+    // Contingency: the date input has an option to "clear" the date, thus
+    // Sending this function a null date variable which causes an error further
+    // down the line.
+    // If the user clears the date, we'll just reset it to the current date.
+    if (date == "") {
+      date = this.convertDateToInputString(new Date());
+    }
+    let request = new XMLHttpRequest();
+    request.addEventListener('load', this.setTransactionValueAtDate.bind(this, request, transactionId, date));
+
+    //Convert the date to a dd-mm-yyyy string for the coingecko API
+    let coingeckoDate = date.substring(8) + date.substring(4,8) + date.substring(0,4);
+    let urlString = PRICE_AT_DATE_URL_PARTS[0] + coingeckoDate + PRICE_AT_DATE_URL_PARTS[1];
+    request.open('GET', PRICE_AT_DATE_URL_PARTS[0] + coingeckoDate + PRICE_AT_DATE_URL_PARTS[1]);
+    request.send();
+
+  }
+
+  setTransactionValueAtDate(request, transactionId, date) {
+    let valueAtDate = Number(JSON.parse(request.responseText).market_data.current_price.usd);
+
+    let transactions = this.state.transactions.slice();
+    let profitData = this.state.profitData.slice();
+    let investmentData = this.state.investmentData.slice();
+    let purchasePrices = this.state.purchasePrices.slice();
+
+    purchasePrices[transactionId] = valueAtDate;
+
+    investmentData[transactionId] = {
+      volume: investmentData[transactionId].volume,
+      date: date
+    };
+
+    let valueAtPresent = investmentData[transactionId].volume * this.state.currentPrice;
+    let valueAtPurchase = investmentData[transactionId].volume * valueAtDate;
+    let valueChange = valueAtPresent - valueAtPurchase;
+    profitData[transactionId] = {
+      valueAtPresent: valueAtPresent.toFixed(2),
+      valueAtPurchase: valueAtPurchase.toFixed(2),
+      valueChange: valueChange.toFixed(2)
+    };
+
+    transactions[transactionId] = (
+      <TransactionContainer
+        id={transactionId}
+        investmentData = {investmentData[transactionId]}
+        profitData = {profitData[transactionId]}
+        currentPrice = {this.state.currentPrice}
+        handleVolumeChange={this.handleVolumeChange}
+        handleDateChange={this.handleDateChange}
+      />
+    );
+
+    this.setState(
+      {
+        transactions: transactions,
+        investmentData: investmentData,
+        profitData: profitData,
+        purchasePrices: purchasePrices,
+      },
+      this.calculateNetChange.bind(this)
+    );
+  }
+
+  updateCurrentMoneroPrice(request) {
+    this.setState({
+      currentPrice: JSON.parse(request.responseText).monero.usd
+    })
+  }
+
+  // Make an HTTP request using the provided URL and run the provided
+  // Callback functio when the server responds
+  getCurrentMoneroPrice() {
+    let request = new XMLHttpRequest();
+    request.addEventListener('load', this.updateCurrentMoneroPrice.bind(this,request));
+    request.open('GET', CURRENT_PRICE_API_URL);
+    request.send();
   }
 
   calculateNetChange() {
@@ -44,17 +134,18 @@ class App extends React.Component {
       date: this.convertDateToInputString(new Date())
     });
 
-    // Temporary for testing
-    purchasePrices.push(this.getFakePurchasePrice());
+    // When adding a new Tx, the default date for the Tx is today, so there
+    // is no need to fetch the historical price data.
+    purchasePrices.push(this.state.currentPrice);
 
-    let valueAtPurchase = (investmentData[investmentData.length-1].volume * purchasePrices[purchasePrices.length-1]).toFixed(2);
-    let valueAtPresent = (investmentData[investmentData.length-1].volume * this.state.currentPrice).toFixed(2);
-    let valueChange = (valueAtPresent - valueAtPurchase).toFixed(2);
+    let valueAtPurchase = (investmentData[investmentData.length-1].volume * purchasePrices[purchasePrices.length-1]);
+    let valueAtPresent = (investmentData[investmentData.length-1].volume * this.state.currentPrice);
+    let valueChange = (valueAtPresent - valueAtPurchase);
 
     profitData.push({
-      valueAtPurchase: valueAtPurchase,
-      valueAtPresent: valueAtPresent,
-      valueChange: valueChange
+      valueAtPurchase: valueAtPurchase.toFixed(2),
+      valueAtPresent: valueAtPresent.toFixed(2),
+      valueChange: valueChange.toFixed(2)
     });
     transactions.push(<TransactionContainer
       id={transactions.length}
@@ -70,8 +161,6 @@ class App extends React.Component {
         investmentData: investmentData,
         profitData: profitData,
         purchasePrices: purchasePrices,
-      }, () => {
-        this.calculateNetChange();
       }
     );
   }
@@ -82,19 +171,24 @@ class App extends React.Component {
     return date.getFullYear() + "-" + month + "-" + date.getDate();
   }
 
-  handleVolumeChange(transactionId, volume) {
+/*
+  // This is code that is _almost_ entirely shared by handleVolumChange()
+  // and handleDateChange(). It has been extracted to avoid unnecessary code
+  // repetition
+  // value: if isChangingVolume, value is the volume
+  // otherwise, value is the purchasePrice
+  updateChildren(transactionId, value, isChangingVolume, date) {
     let investmentData = this.state.investmentData.slice();
     let profitData = this.state.profitData.slice();
     let transactions = this.state.transactions.slice();
 
     investmentData[transactionId] = {
-      volume: volume,
-      date: investmentData[transactionId].date
+      volume: isChangingVolume ? value : investmentData[transactionId].volume,
+      date: isChangingVolume ? investmentData[transactionId].date : date
     };
 
-
-    let valueAtPurchase = volume * this.state.purchasePrices[transactionId];
     let valueAtPresent = volume * this.state.currentPrice;
+    let valueAtPurchase = isChangingVolume ? this.state.purchasePrices[transactionId] : this * this.state.purchasePrices[transactionId] : value * ;
     profitData[transactionId] = {
       valueAtPurchase: valueAtPurchase.toFixed(2),
       valueAtPresent: valueAtPresent.toFixed(2),
@@ -119,10 +213,46 @@ class App extends React.Component {
     }, () => {
     });
   }
+*/
 
-  handleDateChange(transactionId, date) {
-    // Will implement this function later
-    // Requires coingecko API interaction
+  handleVolumeChange(transactionId, volume) {
+    let investmentData = this.state.investmentData.slice();
+    let profitData = this.state.profitData.slice();
+    let transactions = this.state.transactions.slice();
+
+    investmentData[transactionId] = {
+      volume: volume,
+      date: investmentData[transactionId].date
+    };
+
+    let valueAtPurchase = volume * this.state.purchasePrices[transactionId];
+    let valueAtPresent = volume * this.state.currentPrice;
+    profitData[transactionId] = {
+      valueAtPurchase: valueAtPurchase.toFixed(2),
+      valueAtPresent: valueAtPresent.toFixed(2),
+      valueChange: (valueAtPresent - valueAtPurchase).toFixed(2)
+    }
+
+    transactions[transactionId] = (
+      <TransactionContainer
+        id={transactionId}
+        investmentData = {investmentData[transactionId]}
+        profitData = {profitData[transactionId]}
+        currentPrice = {this.state.currentPrice}
+        purchasePrices = {this.state.purchasePrices}
+        handleVolumeChange={this.handleVolumeChange}
+        handleDateChange={this.handleDateChange}
+      />
+    );
+
+    this.setState(
+      {
+        transactions: transactions,
+        investmentData: investmentData,
+        profitData: profitData,
+      },
+      this.calculateNetChange.bind(this)
+    );
   }
 
   render() {
@@ -154,8 +284,7 @@ class TransactionContainer extends React.Component {
   }
 
   onDateChange(event) {
-    this.setState({dateInput: event.target.value});
-    this.props.handleDateChange(this.props.id, this._dateInput)
+    this.props.handleDateChange(this.props.id, event.target.value);
   }
 
   render() {
