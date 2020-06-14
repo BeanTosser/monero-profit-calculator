@@ -36,16 +36,52 @@ class App extends React.Component {
     // If the user clears the date, we'll just reset it to the current date.
     if (date == "") {
       date = this.convertDateToInputString(new Date());
+    // Make sure the user isn't in the middle of entering a date (ie )
+    } else if (this.isDateValid(date)) {
+      let request = new XMLHttpRequest();
+      request.addEventListener('load', this.setTransactionValueAtDate.bind(this, request, transactionId, date));
+
+      //Convert the date to a dd-mm-yyyy string for the coingecko API
+      let coingeckoDate = date.substring(8) + date.substring(4,8) + date.substring(0,4);
+      let urlString = PRICE_AT_DATE_URL_PARTS[0] + coingeckoDate + PRICE_AT_DATE_URL_PARTS[1];
+      request.open('GET', PRICE_AT_DATE_URL_PARTS[0] + coingeckoDate + PRICE_AT_DATE_URL_PARTS[1]);
+      request.send();
+    } else {
+      // The requested date pre-dates Monero's existence (or at least
+      // coingecko's records)! So just reset the date field to it's previous
+      // vlue (before the change attempt)
+      this.updateTransactions(transactionId, this.state.investmentData[transactionId].volume, this.state.investmentData[transactionId].date, this.state.purchasePrices[transactionId]);
     }
-    let request = new XMLHttpRequest();
-    request.addEventListener('load', this.setTransactionValueAtDate.bind(this, request, transactionId, date));
+  }
 
-    //Convert the date to a dd-mm-yyyy string for the coingecko API
-    let coingeckoDate = date.substring(8) + date.substring(4,8) + date.substring(0,4);
-    let urlString = PRICE_AT_DATE_URL_PARTS[0] + coingeckoDate + PRICE_AT_DATE_URL_PARTS[1];
-    request.open('GET', PRICE_AT_DATE_URL_PARTS[0] + coingeckoDate + PRICE_AT_DATE_URL_PARTS[1]);
-    request.send();
+  isDateValid(date){
+    let year = Number(date.substring(0,4));
 
+    // The date as supplied may have single-digit month or day components
+    // thus, the starting indices of each date component will vary.
+    // we have to find the starting indices
+    let monthEndIndex = date.substring(5).indexOf('-') + 5;
+    let month = Number(date.substring(5,monthEndIndex));
+    let dayStartIndex = monthEndIndex + 1;
+    let day = Number(date.substring(dayStartIndex));
+
+    // We also have to make sure the user isn't attempting to enter a date in the
+    // future. We need today's date in order to check
+    let today = new Date();
+    let thisYear = today.getFullYear();
+    let thisMonth = today.getMonth()+1;
+    let thisDay = today.getDate();
+    if (year < 2014 ||
+        year == 2014 && month < 5 ||
+        year == 2014 && month == 5 && day < 21) {
+      alert("Invalid date! Coingecko does not report monero's value history before 05/21/2014");
+    } else if (year > thisYear ||
+        year == thisYear && month > thisMonth ||
+        year == thisYear && month == thisMonth && day > thisDay) {
+      alert("Invalid date! Coingecko cannot predict the future.");
+    } else return true;
+
+    return false;
   }
 
   setTransactionValueAtDate(request, transactionId, date) {
@@ -97,15 +133,18 @@ class App extends React.Component {
       />
     );
 
-    this.setState(
-      {
-        transactions: transactions,
-        investmentData: investmentData,
-        profitData: profitData,
-        purchasePrices: purchasePrices,
-      },
-      this.calculateNetChange.bind(this)
-    );
+    let netChange = 0;
+    for(let i=0; i < profitData.length; i++){
+      netChange += Number(profitData[i].valueChange);
+    }
+    alert("Setting app state");
+    this.setState({
+      transactions: transactions,
+      investmentData: investmentData,
+      profitData: profitData,
+      purchasePrices: purchasePrices,
+      netChange: netChange
+    });
   }
 
   updateCurrentMoneroPrice(request) {
@@ -123,19 +162,6 @@ class App extends React.Component {
     request.send();
   }
 
-  calculateNetChange() {
-    let netChange = 0;
-    for(let i=0; i < this.state.profitData.length; i++){
-      netChange += Number(this.state.profitData[i].valueChange);
-    }
-    //netChange = netChange.tofixed(2);
-    this.setState({netChange: netChange.toFixed(2)});
-  }
-
-  getFakePurchasePrice() {
-    return 50 + (Math.random() - 0.5) * 20
-  }
-
   addTransaction(){
     this.updateTransactions(this.state.transactions.length, 0.00, this.convertDateToInputString(new Date()), this.state.currentPrice);
   }
@@ -151,6 +177,7 @@ class App extends React.Component {
   }
 
   render() {
+    alert("Rendering app");
     return (
       <div className="App">
         <div className="Header"><h1>Monero Profit Calculator</h1></div>
@@ -163,6 +190,7 @@ class App extends React.Component {
 }
 
 function ProfitBox(props) {
+  alert("rendering profitbox");
   // The text color of the total profit/loss changes depending on whether the
   // net change is positive or negative
   // the colors are handled by the App.css file, where the "subclass" determines
@@ -194,6 +222,7 @@ class TransactionContainer extends React.Component {
   }
 
   render() {
+    alert("rendering tx container");
     return(
       <div className="Transaction">
         <div className="EntryArea">
@@ -232,7 +261,7 @@ class AddTransactionButton extends React.Component {
 function Prompt(props) {
   return(
   <div className="Prompt">
-    {props.name}: <input value = {props.value} type={props.type} name={props.name} size={props.size} onChange={props.onChange} />
+    {props.name}: <input value = {props.value} type={props.type} name={props.name} size={props.size} onChange={props.onChange}/>
   </div>
   );
 }
