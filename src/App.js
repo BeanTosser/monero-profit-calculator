@@ -16,7 +16,8 @@ class App extends React.Component {
       profitData: [],
       purchasePrices: [],
       currentPrice: 0.00, //Fake dummy price,
-      netChange: 0.0
+      netChange: 0.0,
+      profitIsPositive: true
     }
     // Bind handlers
     this.addTransaction = this.addTransaction.bind(this);
@@ -29,7 +30,6 @@ class App extends React.Component {
   }
 
   handleDateChange(transactionId, date){
-    alert("handleDateChange; date: " + date);
     // Contingency: the date input has an option to "clear" the date, thus
     // Sending this function a null date variable which causes an error further
     // down the line.
@@ -42,7 +42,6 @@ class App extends React.Component {
 
     //Convert the date to a dd-mm-yyyy string for the coingecko API
     let coingeckoDate = date.substring(8) + date.substring(4,8) + date.substring(0,4);
-    alert('coingeckoDate: ' + coingeckoDate);
     let urlString = PRICE_AT_DATE_URL_PARTS[0] + coingeckoDate + PRICE_AT_DATE_URL_PARTS[1];
     request.open('GET', PRICE_AT_DATE_URL_PARTS[0] + coingeckoDate + PRICE_AT_DATE_URL_PARTS[1]);
     request.send();
@@ -50,7 +49,6 @@ class App extends React.Component {
   }
 
   setTransactionValueAtDate(request, transactionId, date) {
-    alert("response: " + request.responseText);
     let purchasePrice = Number(JSON.parse(request.responseText).market_data.current_price.usd);
     this.updateTransactions(transactionId, this.state.investmentData[transactionId].volume, date, purchasePrice);
   }
@@ -77,10 +75,6 @@ class App extends React.Component {
       volume: volume,
       date: date
     }
-
-    alert("typeof volume: " + typeof(volume));
-    alert("typeof this.state.currentPrice: " + typeof(this.state.currentPrice));
-    alert("typeof purchasePrice: " + typeof(purchasePrice));
 
     let presentValue = volume * this.state.currentPrice;
     let purchaseValue = volume * purchasePrice;
@@ -160,12 +154,23 @@ class App extends React.Component {
     return (
       <div className="App">
         <div className="Header"><h1>Monero Profit Calculator</h1></div>
-        <div className="TotalProfit">${this.state.netChange}</div>
+        <ProfitBox netChange = {this.state.netChange}/>
         {this.state.transactions}
         <AddTransactionButton onClick={this.addTransaction} />
       </div>
     );
   }
+}
+
+function ProfitBox(props) {
+  // The text color of the total profit/loss changes depending on whether the
+  // net change is positive or negative
+  // the colors are handled by the App.css file, where the "subclass" determines
+  // whether to display red or green text
+  let subClass = props.netChange < 0 ? "NegativeProfit" : "PositiveProfit";
+  return(
+    <div className={"TotalProfit " + subClass}>${props.netChange}</div>
+  );
 }
 
 class TransactionContainer extends React.Component {

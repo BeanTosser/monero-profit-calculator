@@ -25,10 +25,19 @@ div.Header {
 }
 
 div.TotalProfit {
+  font-size: 24px;
+  font-weight: bold;
   background-color: #FFFBC2;
   height: 32px;
   width: 100%;
+}
 
+.PositiveProfit {
+  color: green;
+}
+
+.NegativeProfit {
+  color: red;
 }
 
 div.Transaction {
