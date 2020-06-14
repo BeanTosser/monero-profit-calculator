@@ -15,7 +15,7 @@ class App extends React.Component {
       investmentData: [],
       profitData: [],
       purchasePrices: [],
-      currentPrice: 55.23, //Fake dummy price,
+      currentPrice: 0.00, //Fake dummy price,
       netChange: 0.0
     }
     // Bind handlers
@@ -29,6 +29,7 @@ class App extends React.Component {
   }
 
   handleDateChange(transactionId, date){
+    alert("handleDateChange; date: " + date);
     // Contingency: the date input has an option to "clear" the date, thus
     // Sending this function a null date variable which causes an error further
     // down the line.
@@ -41,6 +42,7 @@ class App extends React.Component {
 
     //Convert the date to a dd-mm-yyyy string for the coingecko API
     let coingeckoDate = date.substring(8) + date.substring(4,8) + date.substring(0,4);
+    alert('coingeckoDate: ' + coingeckoDate);
     let urlString = PRICE_AT_DATE_URL_PARTS[0] + coingeckoDate + PRICE_AT_DATE_URL_PARTS[1];
     request.open('GET', PRICE_AT_DATE_URL_PARTS[0] + coingeckoDate + PRICE_AT_DATE_URL_PARTS[1]);
     request.send();
@@ -48,26 +50,45 @@ class App extends React.Component {
   }
 
   setTransactionValueAtDate(request, transactionId, date) {
-    let valueAtDate = Number(JSON.parse(request.responseText).market_data.current_price.usd);
+    alert("response: " + request.responseText);
+    let purchasePrice = Number(JSON.parse(request.responseText).market_data.current_price.usd);
+    this.updateTransactions(transactionId, this.state.investmentData[transactionId].volume, date, purchasePrice);
+  }
 
+  updateTransactions(transactionId, volume, date, purchasePrice) {
     let transactions = this.state.transactions.slice();
     let profitData = this.state.profitData.slice();
     let investmentData = this.state.investmentData.slice();
     let purchasePrices = this.state.purchasePrices.slice();
 
-    purchasePrices[transactionId] = valueAtDate;
+    // If the id is higher than the last transaction in the array,
+    // Then we must be creating a new Tx
+    // The arrays must be augmented to make room for it
+    if(transactionId > transactions.length-1){
+      transactions.push({});
+      profitData.push({});
+      investmentData.push({});
+      purchasePrices.push({});
+    }
+
+    purchasePrices[transactionId] = purchasePrice;
 
     investmentData[transactionId] = {
-      volume: investmentData[transactionId].volume,
+      volume: volume,
       date: date
-    };
+    }
 
-    let valueAtPresent = investmentData[transactionId].volume * this.state.currentPrice;
-    let valueAtPurchase = investmentData[transactionId].volume * valueAtDate;
-    let valueChange = valueAtPresent - valueAtPurchase;
+    alert("typeof volume: " + typeof(volume));
+    alert("typeof this.state.currentPrice: " + typeof(this.state.currentPrice));
+    alert("typeof purchasePrice: " + typeof(purchasePrice));
+
+    let presentValue = volume * this.state.currentPrice;
+    let purchaseValue = volume * purchasePrice;
+    let valueChange = presentValue - purchaseValue;
+
     profitData[transactionId] = {
-      valueAtPresent: valueAtPresent.toFixed(2),
-      valueAtPurchase: valueAtPurchase.toFixed(2),
+      valueAtPresent: presentValue.toFixed(2),
+      valueAtPurchase: purchaseValue.toFixed(2),
       valueChange: valueChange.toFixed(2)
     };
 
@@ -114,7 +135,7 @@ class App extends React.Component {
       netChange += Number(this.state.profitData[i].valueChange);
     }
     //netChange = netChange.tofixed(2);
-    this.setState({netChange: netChange});
+    this.setState({netChange: netChange.toFixed(2)});
   }
 
   getFakePurchasePrice() {
@@ -122,47 +143,7 @@ class App extends React.Component {
   }
 
   addTransaction(){
-    let transactions = this.state.transactions.slice();
-    let investmentData = this.state.investmentData.slice();
-    let profitData = this.state.profitData.slice();
-    let purchasePrices = this.state.purchasePrices.slice();
-
-    // Change to 0.00 for final build
-    const volume = 1.236
-    investmentData.push({
-      volume: volume, // Dummy value
-      date: this.convertDateToInputString(new Date())
-    });
-
-    // When adding a new Tx, the default date for the Tx is today, so there
-    // is no need to fetch the historical price data.
-    purchasePrices.push(this.state.currentPrice);
-
-    let valueAtPurchase = (investmentData[investmentData.length-1].volume * purchasePrices[purchasePrices.length-1]);
-    let valueAtPresent = (investmentData[investmentData.length-1].volume * this.state.currentPrice);
-    let valueChange = (valueAtPresent - valueAtPurchase);
-
-    profitData.push({
-      valueAtPurchase: valueAtPurchase.toFixed(2),
-      valueAtPresent: valueAtPresent.toFixed(2),
-      valueChange: valueChange.toFixed(2)
-    });
-    transactions.push(<TransactionContainer
-      id={transactions.length}
-      investmentData = {investmentData[investmentData.length-1]}
-      profitData = {profitData[profitData.length-1]}
-      currentPrice = {this.state.currentPrice}
-      handleVolumeChange={this.handleVolumeChange}
-      handleDateChange={this.handleDateChange}
-    />);
-    this.setState(
-      {
-        transactions: transactions,
-        investmentData: investmentData,
-        profitData: profitData,
-        purchasePrices: purchasePrices,
-      }
-    );
+    this.updateTransactions(this.state.transactions.length, 0.00, this.convertDateToInputString(new Date()), this.state.currentPrice);
   }
 
   convertDateToInputString(date) {
@@ -171,88 +152,8 @@ class App extends React.Component {
     return date.getFullYear() + "-" + month + "-" + date.getDate();
   }
 
-/*
-  // This is code that is _almost_ entirely shared by handleVolumChange()
-  // and handleDateChange(). It has been extracted to avoid unnecessary code
-  // repetition
-  // value: if isChangingVolume, value is the volume
-  // otherwise, value is the purchasePrice
-  updateChildren(transactionId, value, isChangingVolume, date) {
-    let investmentData = this.state.investmentData.slice();
-    let profitData = this.state.profitData.slice();
-    let transactions = this.state.transactions.slice();
-
-    investmentData[transactionId] = {
-      volume: isChangingVolume ? value : investmentData[transactionId].volume,
-      date: isChangingVolume ? investmentData[transactionId].date : date
-    };
-
-    let valueAtPresent = volume * this.state.currentPrice;
-    let valueAtPurchase = isChangingVolume ? this.state.purchasePrices[transactionId] : this * this.state.purchasePrices[transactionId] : value * ;
-    profitData[transactionId] = {
-      valueAtPurchase: valueAtPurchase.toFixed(2),
-      valueAtPresent: valueAtPresent.toFixed(2),
-      valueChange: (valueAtPresent - valueAtPurchase).toFixed(2)
-    }
-
-    transactions[transactionId] = (
-      <TransactionContainer
-        id={transactionId}
-        investmentData = {investmentData[transactionId]}
-        profitData = {profitData[transactionId]}
-        currentPrice = {this.state.currentPrice}
-        handleVolumeChange={this.handleVolumeChange}
-        handleDateChange={this.handleDateChange}
-      />
-    );
-
-    this.setState({
-      investmentData: investmentData,
-      profitData: profitData,
-      transactions: transactions
-    }, () => {
-    });
-  }
-*/
-
   handleVolumeChange(transactionId, volume) {
-    let investmentData = this.state.investmentData.slice();
-    let profitData = this.state.profitData.slice();
-    let transactions = this.state.transactions.slice();
-
-    investmentData[transactionId] = {
-      volume: volume,
-      date: investmentData[transactionId].date
-    };
-
-    let valueAtPurchase = volume * this.state.purchasePrices[transactionId];
-    let valueAtPresent = volume * this.state.currentPrice;
-    profitData[transactionId] = {
-      valueAtPurchase: valueAtPurchase.toFixed(2),
-      valueAtPresent: valueAtPresent.toFixed(2),
-      valueChange: (valueAtPresent - valueAtPurchase).toFixed(2)
-    }
-
-    transactions[transactionId] = (
-      <TransactionContainer
-        id={transactionId}
-        investmentData = {investmentData[transactionId]}
-        profitData = {profitData[transactionId]}
-        currentPrice = {this.state.currentPrice}
-        purchasePrices = {this.state.purchasePrices}
-        handleVolumeChange={this.handleVolumeChange}
-        handleDateChange={this.handleDateChange}
-      />
-    );
-
-    this.setState(
-      {
-        transactions: transactions,
-        investmentData: investmentData,
-        profitData: profitData,
-      },
-      this.calculateNetChange.bind(this)
-    );
+    this.updateTransactions(transactionId, Number(volume), this.convertDateToInputString(new Date()), this.state.purchasePrices[transactionId]);
   }
 
   render() {
