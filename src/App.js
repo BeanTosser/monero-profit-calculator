@@ -7,6 +7,11 @@ const CURRENT_PRICE_API_URL = "https://api.coingecko.com/api/v3/simple/price?ids
 // form the complete date string
 const PRICE_AT_DATE_URL_PARTS = ["https://api.coingecko.com/api/v3/coins/monero/history?date=","&localization=false"]
 
+// change the color of the total profit/loss indicator based on whether the
+// total is positive or negative
+const POSITIVE_COLOR = "#00FF00"; // green
+const NEGATIVE_COLOR = "#FF0000"; // red
+
 class App extends React.Component {
   constructor(props) {
     super(props);
@@ -160,7 +165,6 @@ class App extends React.Component {
   }
 
   deleteTransaction(transactionId) {
-    transactionId = transactionId;
     // -- FIX IDs --
     // removing an element will decrement the index of each element after it in
     // the list by 1. The transaction elements need to have their IDs updated
@@ -214,8 +218,11 @@ class App extends React.Component {
   render() {
     return (
       <div className="App">
-        <div className="Header"><h1>Monero Profit Calculator</h1></div>
-        <ProfitBox netChange = {this.state.netChange}/>
+        <div id="pageTop">
+          <div className="Header"><h1>Monero Profit Calculator</h1></div>
+          <ProfitBox netChange = {this.state.netChange}/>
+        </div>
+        <div className="topSpacer"></div>
         {this.state.transactions}
         <AppButton id="AddTransaction" onClick={this.addTransaction} symbol="+" />
       </div>
@@ -228,9 +235,8 @@ function ProfitBox(props) {
   // net change is positive or negative
   // the colors are handled by the App.css file, where the "subclass" determines
   // whether to display red or green text
-  let subClass = props.netChange < 0 ? "NegativeProfit" : "PositiveProfit";
   return(
-    <div className={"TotalProfit " + subClass}>${props.netChange}</div>
+    <div className={"TotalProfit"} style={{color: props.netChange >= 0 ? POSITIVE_COLOR : NEGATIVE_COLOR}}>${props.netChange}</div>
   );
 }
 
@@ -279,8 +285,8 @@ class TransactionContainer extends React.Component {
             onChange={this.onDateChange}
           />
         </div>
-        <AppButton id="DeleteTransaction" onClick={this.deleteTransaction} symbol="X" />
         <ProfitDataTable profitData={this.props.profitData} />
+        <AppButton id="DeleteTransaction" onClick={this.deleteTransaction} symbol="X" />
       </div>
     );
   };
@@ -300,26 +306,20 @@ function Prompt(props) {
   );
 }
 
-class ProfitDataTable extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-
-  render() {
-    return (
-      <table>
-        <tr className = "TableLabels">
-          <td>Purchase Value</td><td>Present Value</td>
-        </tr>
-        <tr>
-          <td>{this.props.profitData.valueAtPurchase}</td><td>{this.props.profitData.valueAtPresent}</td>
-        </tr>
-        <tr>
-          <td>Profit/Loss: </td><td>{this.props.profitData.valueChange}</td>
-        </tr>
-      </table>
-    );
-  }
+function ProfitDataTable (props) {
+  return (
+    <table className="vertical-center">
+      <tr className = "TableLabels">
+        <td>Purchase Value</td><td>Present Value</td>
+      </tr>
+      <tr>
+        <td>{props.profitData.valueAtPurchase}</td><td>{props.profitData.valueAtPresent}</td>
+      </tr>
+      <tr>
+        <td>Profit/Loss: </td><td>{props.profitData.valueChange}</td>
+      </tr>
+    </table>
+  );
 }
 
 export default App;

@@ -12,19 +12,28 @@ div.App {
   right: 0;
   margin-left: auto;
   margin-right: auto;
-  height: 100%;
+
   width: 550px;
 
   text-align: center;
 }
 
+div#pageTop {
+  position: fixed;
+  width: inherit;
+  z-index: 100;
+}
+
 div.Header {
+  position: relative;
   background-color: #FF7700;
   height: 60px;
   width: 100%;
+  margin-top: -4%;
 }
 
 div.TotalProfit {
+  position: relative;
   font-size: 24px;
   font-weight: bold;
   background-color: #FFFBC2;
@@ -32,12 +41,9 @@ div.TotalProfit {
   width: 100%;
 }
 
-.PositiveProfit {
-  color: green;
-}
-
-.NegativeProfit {
-  color: red;
+div.topSpacer {
+  position: relative;
+  height: 96px;
 }
 
 div.Transaction {
@@ -59,8 +65,9 @@ button#AddTransaction {
 
 button#DeleteTransaction {
   height: 24px;
-  width: 24px;
+  top: 0px;
   font-size: 12px;
+  float: right;
 }
 
 .EntryArea {
@@ -75,14 +82,24 @@ button#DeleteTransaction {
   font-weight: bold;
 }
 
+.vertical-center {
+  margin: 0;
+  position: relative;
+  top: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+}
+
 table {
   text-align: center;
   border: 1px solid black;
-  float: right;
+  border-collapse: collapse;
+  height: 80px;
 }
 
 td {
   border: 1px solid black;
+  margin: 0;
 }
 
 .TableLabels {
