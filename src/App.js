@@ -23,6 +23,7 @@ class App extends React.Component {
     this.addTransaction = this.addTransaction.bind(this);
     this.handleVolumeChange = this.handleVolumeChange.bind(this);
     this.handleDateChange = this.handleDateChange.bind(this);
+    this.deleteTransaction = this.deleteTransaction.bind(this);
   }
 
   componentDidMount(){
@@ -34,7 +35,7 @@ class App extends React.Component {
     // Sending this function a null date variable which causes an error further
     // down the line.
     // If the user clears the date, we'll just reset it to the current date.
-    if (date == "") {
+    if (date === "") {
       date = this.convertDateToInputString(new Date());
     // Make sure the user isn't in the middle of entering a date (ie )
     } else if (this.isDateValid(date)) {
@@ -43,7 +44,6 @@ class App extends React.Component {
 
       //Convert the date to a dd-mm-yyyy string for the coingecko API
       let coingeckoDate = date.substring(8) + date.substring(4,8) + date.substring(0,4);
-      let urlString = PRICE_AT_DATE_URL_PARTS[0] + coingeckoDate + PRICE_AT_DATE_URL_PARTS[1];
       request.open('GET', PRICE_AT_DATE_URL_PARTS[0] + coingeckoDate + PRICE_AT_DATE_URL_PARTS[1]);
       request.send();
     } else {
@@ -68,16 +68,20 @@ class App extends React.Component {
     // We also have to make sure the user isn't attempting to enter a date in the
     // future. We need today's date in order to check
     let today = new Date();
-    let thisYear = today.getFullYear();
-    let thisMonth = today.getMonth()+1;
-    let thisDay = today.getDate();
-    if (year < 2014 ||
-        year == 2014 && month < 5 ||
-        year == 2014 && month == 5 && day < 21) {
+    let thisYear = Number(today.getFullYear());
+    let thisMonth = Number(today.getMonth()+1);
+    let thisDay = Number(today.getDate());
+    if (
+      (year < 2014) ||
+      ((year === 2014) && (month < 5)) ||
+      ((year === 2014) && (month === 5) && (day < 21))
+    ) {
       alert("Invalid date! Coingecko does not report monero's value history before 05/21/2014");
-    } else if (year > thisYear ||
-        year == thisYear && month > thisMonth ||
-        year == thisYear && month == thisMonth && day > thisDay) {
+    } else if (
+      (year > thisYear) ||
+      ((year === thisYear) && (month > thisMonth)) ||
+      ((year === thisYear) && (month === thisMonth) && (day > thisDay))
+    ) {
       alert("Invalid date! Coingecko cannot predict the future.");
     } else return true;
 
@@ -122,28 +126,63 @@ class App extends React.Component {
       valueChange: valueChange.toFixed(2)
     };
 
-    transactions[transactionId] = (
-      <TransactionContainer
-        id={transactionId}
-        investmentData = {investmentData[transactionId]}
-        profitData = {profitData[transactionId]}
-        currentPrice = {this.state.currentPrice}
-        handleVolumeChange={this.handleVolumeChange}
-        handleDateChange={this.handleDateChange}
-      />
-    );
+    transactions[transactionId] = this.buildTransactionContainer(transactionId, investmentData[transactionId], profitData[transactionId]);
 
     let netChange = 0;
     for(let i=0; i < profitData.length; i++){
       netChange += Number(profitData[i].valueChange);
     }
-    alert("Setting app state");
     this.setState({
       transactions: transactions,
       investmentData: investmentData,
       profitData: profitData,
       purchasePrices: purchasePrices,
-      netChange: netChange
+      netChange: netChange.toFixed(2)
+    });
+  }
+
+  buildTransactionContainer(transactionId, investmentData, profitData) {
+    return (
+      <TransactionContainer
+        transactionId={transactionId}
+        investmentData = {investmentData}
+        profitData = {profitData}
+        currentPrice = {this.state.currentPrice}
+        handleVolumeChange={this.handleVolumeChange}
+        handleDateChange={this.handleDateChange}
+        deleteTransaction={this.deleteTransaction}
+      />
+    );
+  }
+
+  addTransaction(){
+    this.updateTransactions(this.state.transactions.length, 0.00, this.convertDateToInputString(new Date()), this.state.currentPrice);
+  }
+
+  deleteTransaction(transactionId) {
+    transactionId = transactionId;
+    // -- FIX IDs --
+    // removing an element will decrement the index of each element after it in
+    // the list by 1. The transaction elements need to have their IDs updated
+    // accordingly
+    let transactions = this.state.transactions.slice();
+    transactions.splice(transactionId, 1);
+    for (var i = transactionId; i < transactions.length; i++) {
+      transactions[i] = this.buildTransactionContainer(i, this.state.investmentData[transactionId + (i-transactionId) + 1], this.state.profitData[transactionId + (i-transactionId) +1]);
+    }
+
+    let investmentData = this.state.investmentData.slice();
+    investmentData.splice(transactionId, 1);
+    let profitData = this.state.profitData.slice();
+    profitData.splice(transactionId, 1);
+    let purchasePrices = this.state.purchasePrices.slice();
+    purchasePrices.splice(transactionId, 1);
+    this.setState({
+      transactions: transactions,
+      investmentData: investmentData,
+      profitData: profitData,
+      purchasePrices: purchasePrices,
+      netChange: (this.state.netChange - Number(this.state.profitData[transactionId].valueChange)).toFixed(2)
     });
   }
 
@@ -162,10 +201,6 @@ class App extends React.Component {
     request.send();
   }
 
-  addTransaction(){
-    this.updateTransactions(this.state.transactions.length, 0.00, this.convertDateToInputString(new Date()), this.state.currentPrice);
-  }
-
   convertDateToInputString(date) {
     let month = date.getMonth() + 1;
     month < 10 ? month = "0" + month : month = "" + month;
@@ -177,20 +212,18 @@ class App extends React.Component {
   }
 
   render() {
-    alert("Rendering app");
     return (
       <div className="App">
         <div className="Header"><h1>Monero Profit Calculator</h1></div>
         <ProfitBox netChange = {this.state.netChange}/>
         {this.state.transactions}
-        <AddTransactionButton onClick={this.addTransaction} />
+        <AppButton id="AddTransaction" onClick={this.addTransaction} symbol="+" />
       </div>
     );
   }
 }
 
 function ProfitBox(props) {
-  alert("rendering profitbox");
   // The text color of the total profit/loss changes depending on whether the
   // net change is positive or negative
   // the colors are handled by the App.css file, where the "subclass" determines
@@ -211,18 +244,22 @@ class TransactionContainer extends React.Component {
     };
     this.onVolumeChange = this.onVolumeChange.bind(this);
     this.onDateChange = this.onDateChange.bind(this);
+    this.deleteTransaction = this.deleteTransaction.bind(this);
   }
 
   onVolumeChange(event) {
-    this.props.handleVolumeChange(this.props.id, event.target.value);
+    this.props.handleVolumeChange(this.props.transactionId, event.target.value);
   }
 
   onDateChange(event) {
-    this.props.handleDateChange(this.props.id, event.target.value);
+    this.props.handleDateChange(this.props.transactionId, event.target.value);
+  }
+
+  deleteTransaction() {
+    this.props.deleteTransaction(this.props.transactionId);
   }
 
   render() {
-    alert("rendering tx container");
     return(
       <div className="Transaction">
         <div className="EntryArea">
@@ -242,20 +279,17 @@ class TransactionContainer extends React.Component {
             onChange={this.onDateChange}
           />
         </div>
+        <AppButton id="DeleteTransaction" onClick={this.deleteTransaction} symbol="X" />
         <ProfitDataTable profitData={this.props.profitData} />
       </div>
     );
   };
 }
 
-class AddTransactionButton extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-
-  render() {
-    return <button id="AddTransaction" onClick={this.props.onClick}>+</button>;
-  }
+function AppButton(props) {
+  return(
+    <button id={props.id} onClick={props.onClick}>{props.symbol}</button>
+  );
 }
 
 function Prompt(props) {

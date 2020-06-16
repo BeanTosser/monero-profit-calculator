@@ -57,6 +57,12 @@ button#AddTransaction {
   margin-top: 15px;
 }
 
+button#DeleteTransaction {
+  height: 24px;
+  width: 24px;
+  font-size: 12px;
+}
+
 .EntryArea {
   height: 100%;
   float: left;
