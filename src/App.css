@@ -2,84 +2,178 @@ h1.App {
   font-size: 31px;
   font-weight: bold;
   text-align: center;
+  line-height: 50px;
+}
+
+.Header>h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+@media screen and (min-width: 545px) {
+  div.App {
+    width: 545px;
+  }
+  div.TransactionArea {
+    width: inherit;
+    grid-template-columns: 1fr 1fr;
+  }
+  div.Transaction {
+    width: 265px;
+  }
+}
+
+@media screen and (min-width: 820px) {
+  div.App {
+    width: 820px;
+  }
+  div.TransactionArea {
+    width: inherit;
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  div.Transaction {
+    width: 265px;
+  }
+}
+
+@media screen and (max-width: 545px) {
+  div.App {
+    width: 100%;
+  }
+  div.TransactionArea {
+    width: 280px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  div.Transaction {
+    width: 265px;
+    margin-left: auto;
+    margin-right: auto;
+  }
 }
 
 div.App {
+  text-align: center;
+  grid-gap: 2px;
+  padding: 0px;
   position: absolute;
-  background-color: #CCFFFF;
-
+  background-color: #eeeeee;
   left: 0;
   right: 0;
   margin-left: auto;
   margin-right: auto;
-
-  width: 550px;
-
   text-align: center;
 }
 
-div#pageTop {
-  position: fixed;
-  width: inherit;
+div.PageTop {
   z-index: 100;
+  position: fixed;
+  grid-area: header;
+  width: inherit;
 }
 
 div.Header {
-  position: relative;
   background-color: #FF7700;
-  height: 60px;
-  width: 100%;
-  margin-top: -4%;
 }
 
 div.TotalProfit {
-  position: relative;
   font-size: 24px;
   font-weight: bold;
   background-color: #FFFBC2;
-  height: 32px;
-  width: 100%;
 }
 
-div.topSpacer {
-  position: relative;
-  height: 96px;
+div.TransactionArea {
+  padding-top: 61px;
+  display: grid;
+  grid-gap: 10px;
+  background-color: #cccccc;
 }
 
 div.Transaction {
-  background-color: #DDDDDD;
-  height: 94px;
-  width: 544px;
-  margin-top: 10px;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  align-self: center;
+  background-color: #BBBBAA;
+  height: 180px;
 
-  margin-left: auto;
-  margin-right: auto;
 }
 
-button#AddTransaction {
-  height: 96px;
-  width: 97%;
-  font-size: 70px;
-  margin-top: 15px;
+div.ProfitData {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  margin: 5px;
+}
+
+.ProfitData div {
+  border: 1px solid black;
+}
+
+div.TransactionGrid {
+  display: grid;
+  grid-gap: 5px;
+  grid-template:
+  "d_button v_entry"
+  "d_button d_entry";
+}
+.VolumeEntry {
+  grid-area: v_entry;
+}
+.DateEntry {
+  grid-area: d_entry;
+}
+.Prompt {
+  margin: 5px auto;
 }
 
 button#DeleteTransaction {
-  height: 24px;
-  top: 0px;
   font-size: 12px;
-  float: right;
+  height: 100%;
 }
 
-.EntryArea {
-  height: 100%;
-  float: left;
+.DeleteButton {
+  margin: 5px;
+  grid-area: d_button;
+  height: 1fr%;
+}
+
+button#AddTransaction {
+  height: 180px;
+  width: 270px;
+  font-size: 70px;
+  justify-self: center;
 }
 
 .Prompt {
-  margin-top: 10px;
   text-align: left;
   font-size: 18px;
   font-weight: bold;
+  width: inherit;
+}
+
+.TableLabels {
+  font-weight: bold;
+
+}
+.TableValues {
+
+}
+.PurchaseValueLabel {
+  grid-area: puv_label;
+}
+.PresentValueLabel {
+  grid-area: prv_label;
+}
+.ProfitLabel {
+  grid-area: pf_label;
+}
+.PurchaesValue {
+  grid-area: puv;
+}
+.PresentValue {
+  grid-area: prv;
+}
+.Profit {
+  grid-area: pf;
 }
 
 .vertical-center {
@@ -88,21 +182,4 @@ button#DeleteTransaction {
   top: 50%;
   -ms-transform: translateY(-50%);
   transform: translateY(-50%);
-}
-
-table {
-  text-align: center;
-  border: 1px solid black;
-  border-collapse: collapse;
-  height: 80px;
-}
-
-td {
-  border: 1px solid black;
-  margin: 0;
-}
-
-.TableLabels {
-  background-color: "#CCCCCC";
-  font-weight: bold;
 }

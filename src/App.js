@@ -149,6 +149,7 @@ class App extends React.Component {
   buildTransactionContainer(transactionId, investmentData, profitData) {
     return (
       <TransactionContainer
+        key={transactionId}
         transactionId={transactionId}
         investmentData = {investmentData}
         profitData = {profitData}
@@ -218,13 +219,14 @@ class App extends React.Component {
   render() {
     return (
       <div className="App">
-        <div id="pageTop">
+        <div className="PageTop">
           <div className="Header"><h1>Monero Profit Calculator</h1></div>
-          <ProfitBox netChange = {this.state.netChange}/>
+          <ProfitBox netChange = {this.state.netChange} />
         </div>
-        <div className="topSpacer"></div>
-        {this.state.transactions}
-        <AppButton id="AddTransaction" onClick={this.addTransaction} symbol="+" />
+        <div className="TransactionArea">
+          {this.state.transactions}
+          <AppButton id="AddTransaction" onClick={this.addTransaction} symbol="+" />
+        </div>
       </div>
     );
   }
@@ -268,25 +270,25 @@ class TransactionContainer extends React.Component {
   render() {
     return(
       <div className="Transaction">
-        <div className="EntryArea">
-          <Prompt
+        <div className="TransactionGrid">
+          <div className="DeleteButton"><AppButton id="DeleteTransaction" onClick={this.deleteTransaction} symbol="X" /></div>
+          <div className="VolumeEntry"><Prompt
             ref={(c) => this.volumeInput = c}
             type="number"
             name="Volume"
             size="12"
             value={this.props.investmentData.volume}
             onChange={this.onVolumeChange}
-          />
-          <Prompt
+          /></div>
+          <div className="DateEntry"><Prompt
             ref={(c) => this._dateInput = c}
             type="date"
             name="Date"
             value={this.props.investmentData.date}
             onChange={this.onDateChange}
-          />
+          /></div>
         </div>
         <ProfitDataTable profitData={this.props.profitData} />
-        <AppButton id="DeleteTransaction" onClick={this.deleteTransaction} symbol="X" />
       </div>
     );
   };
@@ -298,27 +300,26 @@ function AppButton(props) {
   );
 }
 
-function Prompt(props) {
-  return(
-  <div className="Prompt">
-    {props.name}: <input value = {props.value} type={props.type} name={props.name} size={props.size} onChange={props.onChange}/>
-  </div>
-  );
+class Prompt extends React.Component {
+  render() {
+    return(
+    <div className={"Prompt " + this.props.className}>
+      {this.props.name}: <input value = {this.props.value} type={this.props.type} name={this.props.name} size={this.props.size} onChange={this.props.onChange}/>
+    </div>
+    );
+  }
 }
 
 function ProfitDataTable (props) {
   return (
-    <table className="vertical-center">
-      <tr className = "TableLabels">
-        <td>Purchase Value</td><td>Present Value</td>
-      </tr>
-      <tr>
-        <td>{props.profitData.valueAtPurchase}</td><td>{props.profitData.valueAtPresent}</td>
-      </tr>
-      <tr>
-        <td>Profit/Loss: </td><td>{props.profitData.valueChange}</td>
-      </tr>
-    </table>
+    <div className="ProfitData">
+      <div className="TableLabels">Purchase Value</div>
+      <div className="TableLabels">Present Value</div>
+      <div className="TableLabels">Profit/Loss: </div>
+      <div className="TableValues">{props.profitData.valueAtPurchase}</div>
+      <div className="TableValues">{props.profitData.valueAtPresent}</div>
+      <div className="TableValues">{props.profitData.valueChange}</div>
+    </div>
   );
 }
 
