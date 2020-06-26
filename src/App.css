@@ -19,7 +19,6 @@ h1.App {
     grid-template-columns: 1fr 1fr;
   }
   div.Transaction {
-    width: 265px;
   }
 }
 
@@ -32,7 +31,6 @@ h1.App {
     grid-template-columns: 1fr 1fr 1fr;
   }
   div.Transaction {
-    width: 265px;
   }
 }
 
@@ -46,7 +44,6 @@ h1.App {
     margin-right: auto;
   }
   div.Transaction {
-    width: 265px;
     margin-left: auto;
     margin-right: auto;
   }
@@ -57,7 +54,6 @@ div.App {
   grid-gap: 2px;
   padding: 0px;
   position: absolute;
-  background-color: #eeeeee;
   left: 0;
   right: 0;
   margin-left: auto;
@@ -86,7 +82,6 @@ div.TransactionArea {
   padding-top: 61px;
   display: grid;
   grid-gap: 10px;
-  background-color: #cccccc;
 }
 
 div.Transaction {
@@ -94,6 +89,7 @@ div.Transaction {
   grid-template-rows: 1fr auto;
   align-self: center;
   background-color: #BBBBAA;
+  background-color: #cccccc;
   height: 180px;
 
 }
@@ -167,6 +163,7 @@ button#AddTransaction {
   grid-area: pf_label;
 }
 .PurchaesValue {
+.PurchaseValue {
   grid-area: puv;
 }
 .PresentValue {
