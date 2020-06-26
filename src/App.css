@@ -162,7 +162,7 @@ button#AddTransaction {
 .ProfitLabel {
   grid-area: pf_label;
 }
-.PurchaesValue {
+
 .PurchaseValue {
   grid-area: puv;
 }
