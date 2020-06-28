@@ -1,6 +1,6 @@
 import React from 'react';
 import './App.css';
-
+import CurrencyInput from './components/CurrencyInput.js';
 // Global constants
 const CURRENT_PRICE_API_URL = "https://api.coingecko.com/api/v3/simple/price?ids=monero&vs_currencies=usd"
 // This request URL is split in two because the appropriate date value must be inserted between them to
@@ -255,8 +255,8 @@ class TransactionContainer extends React.Component {
     this.deleteTransaction = this.deleteTransaction.bind(this);
   }
 
-  onVolumeChange(event) {
-    this.props.handleVolumeChange(this.props.transactionId, event.target.value);
+  onVolumeChange(event, value) {
+    this.props.handleVolumeChange(this.props.transactionId, value);
   }
 
   onDateChange(event) {
@@ -272,21 +272,24 @@ class TransactionContainer extends React.Component {
       <div className="Transaction">
         <div className="TransactionGrid">
           <div className="DeleteButton"><AppButton id="DeleteTransaction" onClick={this.deleteTransaction} symbol="X" /></div>
-          <div className="VolumeEntry"><Prompt
+          <CurrencyInput
             ref={(c) => this.volumeInput = c}
-            type="number"
             name="Volume"
             size="12"
             value={this.props.investmentData.volume}
+            currencySymbol="M"
             onChange={this.onVolumeChange}
-          /></div>
-          <div className="DateEntry"><Prompt
+            decimalPlaces="12"
+          />
+          <input
+            className="DateEntry"
             ref={(c) => this._dateInput = c}
+            value = {this.props.investmentData.date}
             type="date"
             name="Date"
-            value={this.props.investmentData.date}
+            size="12"
             onChange={this.onDateChange}
-          /></div>
+          />
         </div>
         <ProfitDataTable profitData={this.props.profitData} />
       </div>
@@ -298,16 +301,6 @@ function AppButton(props) {
   return(
     <button id={props.id} onClick={props.onClick}>{props.symbol}</button>
   );
-}
-
-class Prompt extends React.Component {
-  render() {
-    return(
-    <div className={"Prompt " + this.props.className}>
-      {this.props.name}: <input value = {this.props.value} type={this.props.type} name={this.props.name} size={this.props.size} onChange={this.props.onChange}/>
-    </div>
-    );
-  }
 }
 
 function ProfitDataTable (props) {

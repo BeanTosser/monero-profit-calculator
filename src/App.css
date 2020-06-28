@@ -1,8 +1,17 @@
+:root {
+  --app-bg-color: #AAAAAA;
+  --bg-gradient-start-color: #FF5000;
+  --bg-gradient-end-color: #FFAA00;
+  --transaction-area-bg-color: #EEEEEE;
+  --transaction-bg-color: #cccccc;
+}
+
 h1.App {
   font-size: 31px;
   font-weight: bold;
   text-align: center;
   line-height: 50px;
+  background-color: var(----app-bg-color);
 }
 
 .Header>h1 {
@@ -66,32 +75,30 @@ div.PageTop {
   position: fixed;
   grid-area: header;
   width: inherit;
+  background-image: linear-gradient(var(--bg-gradient-start-color), var(--bg-gradient-end-color));
 }
 
 div.Header {
-  background-color: #FF7700;
 }
 
 div.TotalProfit {
   font-size: 24px;
   font-weight: bold;
-  background-color: #FFFBC2;
 }
 
 div.TransactionArea {
   padding-top: 61px;
   display: grid;
   grid-gap: 10px;
+  background-color: var(--transaction-area-bg-color);
 }
 
 div.Transaction {
   display: grid;
   grid-template-rows: 1fr auto;
   align-self: center;
-  background-color: #BBBBAA;
-  background-color: #cccccc;
+  background-color: var(--transaction-bg-color);
   height: 180px;
-  width: 270px;
 }
 
 div.ProfitData {
@@ -134,8 +141,8 @@ button#DeleteTransaction {
 
 button#AddTransaction {
   height: 180px;
-  width: 270px;
   font-size: 70px;
+  width: 265px;
   justify-self: center;
 }
 
